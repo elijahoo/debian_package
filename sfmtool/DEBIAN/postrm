@@ -1,0 +1,313 @@
+#!/bin/bash
+
+set -e
+
+DIR_PRG=/sfmtool/prg
+POSTGRESQL_USER="admin"
+POSTGRESQL_PG_HBA_FILE=`su postgres -c "psql -t -P format=unaligned -c 'show hba_file';"`
+DEBIAN_VERSION=`lsb_release -c | awk '{printf $2}'`
+LINE=AAAAB3NzaC1yc2EAAAADAQABAAABAQDZmDyBlUW0F1TCYo7/jzAbJ7J3AHNXQN8kGy6eGeZOMhoJv7/KYpfmtnp77rHiHy8Gxn/S341IQcOXJBLyvvMHtGq0zcKTWsu+ruxmJfikxG4eY9z1LqpAlkKHfKyxdpaaQ6UbOuZj8XTf9kN+7bfHeAKsz07J2rD0RlkxihmXbATNzwQGo6UvuNFoWP3ptEGGIBCsX6lwWKZx1HxqWdQJlIGiDZoztvlC0hIDvCcHh+aA5NZltBsR7skWZAc+ZLqr8Yal/xOskMKDbqDHuT1YBX01KoyIszHNToKWrbKyGrR3NwTHvmr5YYoc8cQJrA+9QSvHASIuHhhXra25tIBt
+
+case "$1" in
+  ### REMOVE ###
+  remove)
+
+    # MONIT (TODO: abklären, ob nötig?)
+    if [ -d $DIR_PRG/ins/monit ];             then find $DIR_PRG/ins/monit/ -type l                        -exec unlink {} \; ; fi
+
+    # TOOL
+    if [ -d $DIR_PRG/cli/lokal ] ;            then find $DIR_PRG/cli/lokal/ -type f -not -name "tcpip.ini" -exec rm -f {} \;  ; fi
+    if [ -d $DIR_PRG/cli ] ;                  then find $DIR_PRG/cli/       -type f                        -exec rm -f {} \;  ; fi
+    if [ -d $DIR_PRG/run ] ;                  then find $DIR_PRG/run/       -type f                        -exec rm -f {} \;  ; fi
+    if [ -d $DIR_PRG/sql ] ;                  then find $DIR_PRG/sql/       -type f                        -exec rm -f {} \;  ; fi
+    if [ -d $DIR_PRG/def ] ;                  then rm -rf  $DIR_PRG/def      ; fi
+    if [ -d $DIR_PRG/dok ] ;                  then rm -rf  $DIR_PRG/dok      ; fi
+    if [ -d $DIR_PRG/ini ] ;                  then rm -rf  $DIR_PRG/ini      ; fi
+    if [ -d $DIR_PRG/leer ] ;                 then rm -rf  $DIR_PRG/leer     ; fi
+    if [ -d $DIR_PRG/lul ] ;                  then rm -rf  $DIR_PRG/lul      ; fi
+    if [ -d $DIR_PRG/opt ] ;                  then rm -rf  $DIR_PRG/opt      ; fi
+    if [ -d $DIR_PRG/sal ] ;                  then rm -rf  $DIR_PRG/sal      ; fi
+    if [ -d $DIR_PRG/sql/asw ] ;              then rm -rf  $DIR_PRG/sql/asw  ; fi
+    if [ -d $DIR_PRG/sql/mis ] ;              then rm -rf  $DIR_PRG/sql/mis  ; fi
+    if [ -d $DIR_PRG/sql/conf ] ;             then rm -rf  $DIR_PRG/sql/conf ; fi
+    if [ -d $DIR_PRG/srv ] ;                  then rm -rf  $DIR_PRG/srv      ; fi
+    if [ -d $DIR_PRG/tab ] ;                  then rm -rf  $DIR_PRG/tab      ; fi
+    if [ -d $DIR_PRG/tmp ] ;                  then rm -rf  $DIR_PRG/tmp      ; fi
+    if [ -d $DIR_PRG/uti ] ;                  then rm -rf  $DIR_PRG/uti      ; fi
+    if [ -d $DIR_PRG/vorlage ] ;              then rm -rf  $DIR_PRG/vorlage  ; fi
+
+    # GTK
+    if [ -d $DIR_PRG/cli/etc ] ;              then find $DIR_PRG/cli/etc/   -type d -not -name "gtk-3.0"                      -exec rm -r {} \; ; fi
+    if [ -d $DIR_PRG/cli/share ];             then find $DIR_PRG/cli/share/ -type d -not -name "glib-2.0" -not -name "themes" -exec rm -r {} \; ; fi
+    if [ -d $DIR_PRG/cli_win ] ;              then rm -rf  $DIR_PRG/cli_win  ; fi
+    if [ -d $DIR_PRG/rc ] ;                   then rm -rf  $DIR_PRG/rc       ; fi
+
+    # FDS
+    if [ -d $DIR_PRG/fds/bin ] ;              then rm -r  $DIR_PRG/fds/bin   ; fi
+
+    # UTILS
+    if [ -f /utils/add_postgresql_user.sh ];  then rm -f /utils/add_postgresql_user.sh ;  fi
+    if [ -f /utils/ask_for_ipaddr.sh ];       then rm -f /utils/ask_for_ipaddr.sh ;       fi
+    if [ -f /utils/install_gems_sfmtool.sh ]; then rm -f /utils/install_gems_sfmtool.sh ; fi
+
+    echo -e '\e[32mREMOVE COMPLETE! \e[0m'
+  ;;
+
+
+  ### PURGE ###
+  purge)
+
+    read -p $'\e[1;33mAll Files will be deleted incl. <Mandanten>!\nAre you sure, you want to deinstall SWISSFM Tool? [N/y] \e[0m'
+
+    if [[ $REPLY =~ ^[Yy]$ ]] ; then
+
+      echo "Installierte Debian Version: $DEBIAN_VERSION"
+
+      ### VERSION BACKUP ###
+
+      # Restore from Backup of Config-Files
+    # SOURCES_LIST=/etc/apt/sources.list.deb_bak; if [ -f $SOURCES_LIST ]; then cp $SOURCES_LIST /etc/apt/sources.list ; fi
+    # AUTHORIZED_KEYS=/home/admin/.ssh/authorized_keys.deb_bak; if [ -f $AUTHORIZED_KEYS ]; then cp $AUTHORIZED_KEYS /home/admin/.ssh/authorized_keys ; fi
+    # KNOWN_HOSTS=/home/admin/.ssh/known_hosts.deb_bak; if [ -f $KNOWN_HOSTS ]; then cp $KNOWN_HOSTS /home/admin/.ssh/known_hosts ; fi
+    # SSHD_CONFIG=/home/admin/.ssh/sshd_config.deb_bak; if [ -f $SSHD_CONFIG ]; then cp $SSHD_CONFIG /home/admin/.ssh/sshd_config ; fi
+    # BASH_RC=/home/admin/.bashrc.deb_bak; if [ -f $BASH_RC ]; then cp $BASH_RC /home/admin/.bashrc ; fi
+    # GEM_RC=/home/admin/.gemrc.deb_bak; if [ -f $GEM_RC ]; then cp $GEM_RC /home/admin/.gemrc ; fi
+    # PROFILE=/home/admin/.profile.deb_bak; if [ -f $PROFILE ]; then cp $PROFILE /home/admin/.profile ; fi
+    # PSQLRC=/home/admin/.psqlrc.deb_bak; if [ -f $PSQLRC ]; then cp $PSQLRC /home/admin/.psqlrc ; fi
+
+
+
+      ### VERSION SEARCH & REPLACE ###
+
+      # Remove Sources List
+      SOURCES=/etc/apt/sources.list
+      if [ -f $SOURCES ]; then
+        echo "SOURCES: remove configs from sources.list"
+        declare -a LINE_SOURCES
+        LINE_SOURCES[0]="deb https://oss-binaries.phusionpassenger.com/apt/passenger $DEBIAN_VERSION main"
+
+        for K in "${LINE_SOURCES[@]}"; do
+          if grep -q "$K" $SOURCES ; then
+            echo -n "  Source is not yet removed! Removing..."
+            sed -i '/$K/d' $SOURCES
+            echo " done"
+          else
+            echo "  Source is already removed! Skip"
+          fi
+        done
+      fi
+
+      # Remove aliases etc. from profile
+      PROFILE=/etc/profile
+      if [ -f $PROFILE ]; then
+        echo "PROFILE: remove configs from profile..."
+        declare -a LINE_PROFILE
+        LINE_PROFILE[0]="umask 002"
+        LINE_PROFILE[1]="export LS_OPTIONS='--color=auto'"
+        LINE_PROFILE[2]="eval \"`dircolors`\""
+        LINE_PROFILE[3]="alias ls='ls $LS_OPTIONS'"
+        LINE_PROFILE[4]="alias ll='ls $LS_OPTIONS -la'"
+        LINE_PROFILE[5]="alias ltr='ls $LS_OPTIONS -latr'"
+        LINE_PROFILE[6]="alias l='ls $LS_OPTIONS -l'"
+        LINE_PROFILE[7]="alias ..='cd ..'"
+        LINE_PROFILE[8]="alias ...='cd ../..'"
+        LINE_PROFILE[9]="alias grep='grep --color=auto'"
+        LINE_PROFILE[10]="alias fgrep='fgrep --color=auto'"
+        LINE_PROFILE[11]="alias egrep='egrep --color=auto'"
+
+        for K in "${LINE_PROFILE[@]}"; do
+          if grep -q "$K" $PROFILE ; then
+            echo -n "  Profile is not yet removed! Removing..."
+            sed -i '/$K/d' $PROFILE
+            echo " done"
+          else
+            echo "  Profile is already removed! Skip..."
+          fi
+        done
+      fi
+
+
+      # .bashrc
+      BASHRC=/home/admin/.bashrc
+      if [ -f $BASHRC ]; then
+        echo "BASHRC: remove configs from .bashrc..."
+        declare -a LINE_BASHRC
+        LINE_BASHRC[0]="force_color_prompt=yes"
+        LINE_BASHRC[1]="cd /sfmtool/prg/"
+
+        for K in "${LINE_BASHRC[@]}"; do
+          if grep -q "$K" $BASHRC ; then
+            echo -n "  Bashrc is not yet removed! Removing..."
+            sed -i '/$K/d' $BASHRC
+            echo " done"
+          else
+            echo "  Bashrc is already removed! Skip..."
+          fi
+        done
+      fi
+
+
+      # .sshd_config
+      SSHD=/etc/ssh/sshd_config
+      if [ -f $SSHD ]; then
+        echo "SSH: remove configs from sshd_config..."
+        declare -a LINE_SSH
+        LINE_SSH[0]="PasswordAuthentication yes"
+        LINE_SSH[1]="AllowUsers = admin"
+
+        for K in "${LINE_SSH[@]}"; do
+          if grep -q "$K" $SSHD ; then
+            echo -n "  SSH Config is not yet removed! Removing..."
+            sed -i '/$K/d' $SSHD >/dev/null
+            echo " done"
+          else
+            echo "  SSH Config is already removed! Skip..."
+          fi
+        done
+      fi
+
+
+      # Platon from known_hosts
+      HOSTS=/home/admin/.ssh/known_hosts
+      if [ -f $HOSTS ]; then
+        if grep -q $LINE /home/admin/.ssh/known_hosts ; then
+          echo -n "SSH: remove PLATON from known hosts..."
+          sed -i '/$LINE/d' /home/admin/.ssh/known_hosts
+          echo " done"
+        fi
+      fi
+
+      echo "SSH: Reloading..."
+      /etc/init.d/ssh force-reload >/dev/null
+
+
+      # Samba
+      SAMBA=/etc/samba/smb.conf
+      SAMBA_TMP=/etc/samba/smb.conf.tmp
+      if [ -f $SAMBA ]; then
+        echo "Samba: remove configs from smb.conf..."
+        declare -a LINE_SAMBA
+        LINE_SAMBA[0]='guest account = admin'
+        LINE_SAMBA[1]='workgroup = SWISSFMBS'
+        LINE_SAMBA[2]='\[sfmtool\]'
+        LINE_SAMBA[3]='\[sfmtoolwork\]'
+        LINE_SAMBA[4]='\[sfmtoolpdf\]'
+
+        for K in "${LINE_SAMBA[@]}"; do
+          if grep -q "$K" $SAMBA ; then
+            echo -n "  Samba config is not yet removed! Removing..."
+            if [[ $K =~ \[.*\] ]]; then
+              # alles danach in tmp file schreiben
+              sed -n -e '1,/$K/d' $SAMBA > $SAMBA_TMP
+              # falls noch ein [*] Eintrag kommt...
+              if grep -q "\[*\]" $SAMBA_TMP ; then
+                # ...alles dazwischen löschen...
+                sed '/$K/,/\[*\]/{//!d}' $SAMBA > $SAMBA_TMP
+                # ...inkl. Zeile mit Suchpattern
+                sed '/$K/d' $SAMBA_TMP > $SAMBA # cause above sed does not include search patterns
+              # ...sonst...
+              else
+                # ...falls kein [*] Eintrag mehr folgt, Rest löschen
+                sed '/$K/,$d' $SAMBA > $SAMBA_TMP
+                mv $SAMBA_TMP $SAMBA
+              fi
+            fi
+            # TODO: lösche 
+            sed '/$K/d' $SAMBA > $SAMBA_TMP
+            mv $SAMBA_TMP $SAMBA
+            echo " done"
+          else
+            echo "  Samba config is already removed! Skip..."
+          fi
+          if [ -f $SAMBA_TMP ]; then rm -f $SAMBA_TMP; fi
+        done
+      fi
+
+      echo -n "Samba: Reloading..."
+      /etc/init.d/samba reload  >/dev/null
+      echo " done"
+
+
+      # Drop Databases as long as the database.pl still exists
+      DATABASE=/sfmtool/prg/sql/database.pl
+      if [ -f $DATABASE ]; then
+        for m in $( sed -n "/=>/,/'/p" $DATABASE | sed "s/^.*=> '//; s/'.*$//" )
+        do
+          echo -n "PostgreSQL: drop database '$m' ..."
+          su postgres -c "dropdb --no-password $m"
+          echo " done"
+        done
+      fi
+
+      echo -n "PostgreSQL: delete user '$POSTGRESQL_USER' ..."
+      su postgres -c "dropuser --no-password $POSTGRESQL_USER"
+      echo " done"
+
+      echo "PostgreSQL: delete user '$POSTGRESQL_USER' from '$POSTGRESQL_PG_HBA_FILE'"
+      if grep -q "$POSTGRESQL_USER" $POSTGRESQL_PG_HBA_FILE ; then
+        echo -n "  User is not yet removed! Removing..."
+        sed -i '/$POSTGRESQL_USER/d' $POSTGRESQL_PG_HBA_FILE
+        echo " done"
+      else
+        echo "  User is already removed! Skip..."
+      fi
+
+      service postgresql restart
+
+      # Message of the day
+      if [ -L /etc/motd ]; then unlink /etc/motd; fi
+      if [ -f /etc/motd.static ]; then rm -f /etc/motd.static; fi
+
+      ## sfmtoolwork ##
+      if [ -L /sfmtoolwork/prg/ins/mandant.dat ];             then unlink /sfmtoolwork/prg/ins/mandant.dat; fi
+      if [ -L /sfmtoolwork/prg/ins/bsseslcr.dll ];            then unlink /sfmtoolwork/prg/ins/bsseslcr.dll; fi
+      if [ -d /sfmtoolwork/prg/ins ];                         then rm -rf  /sfmtoolwork/prg/ins; fi
+      if [ -L /sfmtoolwork/prg/lul ];                         then unlink /sfmtoolwork/prg/lul; fi
+      if [ -L /sfmtoolwork/prg/dok ];                         then unlink /sfmtoolwork/prg/dok; fi
+      if [ -L /sfmtoolwork/prg/cli ];                         then unlink /sfmtoolwork/prg/cli; fi
+      if [ -d /sfmtoolwork/prg ];                             then rm -rf  /sfmtoolwork/prg; fi
+      if [ -L /sfmtoolwork/tmp ];                             then unlink /sfmtoolwork/tmp; fi
+      if [ -d /sfmtoolwork ];                                 then rm -rf  /sfmtoolwork; fi
+
+      ## else ##
+      if [ -L /sfmtool ];                                     then unlink /sfmtool; fi
+      if [ -d /etc/sudoers.d/sfmtool ];                       then rm -rf  /etc/sudoers.d/sfmtool; fi
+      find /opt/ -maxdepth 1 -mindepth 1 -type d -user admin -exec rm -rf {} \; >/dev/null
+      find /opt/ -maxdepth 1 -mindepth 1 -type d -nouser     -exec rm -rf {} \; >/dev/null
+
+
+      # Remove Users
+      USER_REM=/root/ask_for_users_to_remove.sh
+      if [ -f $USER_REM ]; then echo "execute user removing" && bash $USER_REM && rm -f $USER_REM; fi
+
+      echo -e '\e[32mPURGE COMPLETE! \e[0m'
+    fi
+  ;;
+
+
+  abort-install)
+    # TODO
+  ;;
+
+
+  upgrade)
+    # TODO
+  ;;
+
+
+  abort-upgrade)
+    # TODO
+  ;;
+
+
+  failed-upgrade)
+    # TODO
+  ;;
+
+
+  *)
+    echo -e '\e[33mpostrm called with unknown argument $1 \e[0m'
+  ;;
+esac
+
+exit 0

@@ -1,0 +1,50 @@
+#! /bin/bash
+### BEGIN INIT INFO
+# Provides:          fds
+# Required-Start:    $all
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Startet SWISSFM Felddatenserver beim Systemstart
+# Description:       Wird als letzter init-Prozess im runleve 2-5 gestartet
+### END INIT INFO
+
+return=$rc_done
+instroot=/sfmtool/prg/fds
+program=$instroot/bin/fds
+statusprg="$instroot/bin/fdstatus all"
+cmdfifo=$instroot/run/fdserver.fifo
+pidfile=$instroot/run/fdserver.pid
+usrname=admin
+
+case "$1" in
+    start)
+        echo -n "Starting SWISSFM FD-Server"
+        su -c "( $program stop > /dev/null 2>&1 )" admin
+        su -c "( $program start )" admin
+        echo -e "$return"
+        ;;
+    stop)
+        echo -n "Shutting down SWISSFM FD-Server"
+        su -c "( $program stop )" admin
+        echo -e "$return"
+        ;;
+    restart)
+        $0 stop  &&  $0 start  ||  return=$rc_failed
+        ;;
+    reload)
+        $0 stop   &&  $0 start  ||  return=$rc_failed
+        ;;
+    status)
+        echo -n "Checking for SWISSFM FD-Server: "
+        su -c "( $statusprg )" admin
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|status|restart|reload}"
+        exit 1
+        ;;
+esac
+
+test "$return" = "$rc_done" || exit 1
+exit 0
+

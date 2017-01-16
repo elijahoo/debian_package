@@ -1,0 +1,77 @@
+#!/bin/bash
+
+set -e
+
+POSTGRESQL_NAME="redmine"
+REDMINE_ORIG=`find /opt/ -name "$POSTGRESQL_NAME-*" | awk '{printf $1}'`
+APACHE=/etc/apache2
+DATABASE_YML=/var/www/database.yml
+
+case "$1" in
+  ### REMOVE ###
+  remove)
+
+    # TODO
+
+    echo -e '\e[32mREMOVE COMPLETE! \e[0m'
+  ;;
+
+
+  ### PURGE ###
+  purge)
+
+    read -p $'\e[1;33mAll Files will be deleted incl. config files!\nAre you sure, you want to deinstall Redmine? [N/y] \e[0m'
+
+    if [[ $REPLY =~ ^[Yy]$ ]] ; then
+
+        # postgresql
+        echo -n "postgresql: drop database '$POSTGRESQL_NAME' ..."
+        su postgres -c "psql postgres -tAc \"DROP DATABASE IF EXISTS $POSTGRESQL_NAME;\""
+        echo " done"
+        echo -n "postgresql: drop role '$POSTGRESQL_NAME' ..."
+        su postgres -c "psql postgres -tAc \"DROP ROLE IF EXISTS $POSTGRESQL_NAME;\""
+        echo " done"
+
+        # redmine
+        if [ -d $REDMINE_ORIG ]; then                   rm -Rf $REDMINE_ORIG;                   fi
+        if [ -f $APACHE/swissfm_ports.conf ]; then      rm -f  $APACHE/swissfm_ports.conf;      fi
+        if [ -f $APACHE/sites-available/redmine ]; then rm -f  $APACHE/sites-available/redmine; fi
+        if [ -L $APACHE/sites-enabled/redmine ]; then   unlink $APACHE/sites-enabled/redmine;   fi
+        if [ -f $DATABASE_YML ]; then                   rm -f  $DATABASE_YML;                   fi
+
+        service apache2 restart
+
+      # TODO
+
+      echo -e '\e[32mPURGE COMPLETE! \e[0m'
+    fi
+  ;;
+
+
+  abort-install)
+    # TODO
+  ;;
+
+
+  upgrade)
+    # TODO
+  ;;
+
+
+  abort-upgrade)
+    # TODO
+  ;;
+
+
+  failed-upgrade)
+    # TODO
+  ;;
+
+
+  *)
+    echo -e '\e[33mpostrm called with unknown argument $1 \e[0m'
+    exit 1
+  ;;
+esac
+
+exit 0

@@ -1,0 +1,13 @@
+/etc/apt/sources.list.d/swissfm.list
+/etc/cron.d/sfmtool
+/etc/incron.d/sfmtool
+/etc/init.d/fds.init
+/etc/init.d/sfmtool.init
+/etc/profile
+/etc/sudoers.d/sfmtool
+/home/admin/.bashrc
+/home/admin/.gemrc
+/home/admin/.psqlrc
+/home/admin/.ssh/authorized_keys
+/home/admin/.ssh/known_hosts
+/home/admin/.ssh/sshd_config

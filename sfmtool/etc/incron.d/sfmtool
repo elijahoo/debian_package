@@ -1,0 +1,1 @@
+/sfmtool/tmp/doku IN_CLOSE_WRITE IN_MOVE bash /sfmtool/prg/opt/uti/dokucopy.sh $@/$#

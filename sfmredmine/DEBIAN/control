@@ -1,0 +1,8 @@
+Package: sfmredmine
+Architecture: i386
+Section: non-free
+Priority: optional
+Depends: apache2, apache2-prefork-dev, libapache2-mod-passenger, apt-transport-https, ca-certificates, postgresql-9.1, postgresql-server-dev-9.1, imagemagick, sfmtool
+Maintainer: SWISSFM <support@swissfm.ch>
+Homepage: http://swissfmtool.com
+Description: Redmine for SWISSFM Tool

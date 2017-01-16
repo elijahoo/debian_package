@@ -1,0 +1,13 @@
+<VirtualHost *:9000>
+  ServerAdmin support@swissfm.ch
+  DocumentRoot /var/www/redmine/public
+  RailsEnv production
+#  RailsEnv development
+
+  <Directory /var/www/redmine/public>
+    AllowOverride all
+    Options -MultiViews
+  </Directory>
+  ErrorLog /var/www/redmine/log/apache2_error.log
+  CustomLog /var/www/redmine/log/apache2_access.log common
+</VirtualHost>

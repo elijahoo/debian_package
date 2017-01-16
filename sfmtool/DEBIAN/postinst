@@ -1,0 +1,263 @@
+#!/bin/bash
+
+set -e
+
+  DEBIAN_VERSION=`lsb_release -c | awk '{printf $2}'`
+  DIR_LIBNODAVE=/opt/libnodave-0.8.4.6
+  DIR_PGSIMPLE=/opt/Pg-Simple-1.20
+  PERL_VERSION='perl -e "print substr($^V, 1)"'
+  echo "Installed Debian Version: $DEBIAN_VERSION"
+
+case "$1" in
+  configure)
+
+    # Make sure the administrative user exists
+    if ! getent passwd admin > /dev/null; then
+      adduser --quiet --home /home/admin --no-create-home \
+              --shell /bin/bash --gid 100 \
+              --gecos "SWISSFM Tool Administrator" admin
+    fi
+    chown -R admin:users /home/admin
+
+    echo -n "create link ..."
+    if [ ! -L "/sfmtool" ]; then ln -s /opt/sfmtool /sfmtool; fi
+    echo " done"
+
+    if [ -f /etc/sudoers.d/sfmtool ]; then
+      echo -n "set ownership ..."
+      chown root:root /etc/sudoers.d/sfmtool
+      echo " done"
+    fi
+
+    echo -n "create neccessary folders ..."
+    if [ -f "/sfmtool/prg/srv/machdir.pl" ] ; then su admin -c "perl /sfmtool/prg/srv/machdir.pl >/dev/null" >/dev/null; fi
+    echo " done"
+
+    echo -n "create sfmtoolwork ."
+    if [ ! -d "/sfmtoolwork" ]; then mkdir /sfmtoolwork; fi
+    echo -n "."
+    if [ ! -d "/sfmtoolwork/prg" ]; then mkdir /sfmtoolwork/prg; fi
+    echo -n "."
+    if [ ! -d "/sfmtoolwork/prg/ins" ]; then mkdir /sfmtoolwork/prg/ins; fi
+    echo -n "."
+    if [ ! -L "/sfmtoolwork/tmp" ]; then ln -s /sfmtool/tmp /sfmtoolwork/tmp; fi
+    echo -n "."
+    if [ ! -L "/sfmtoolwork/prg/cli" ]; then ln -s /sfmtool/prg/cli /sfmtoolwork/prg/cli; fi
+    echo -n "."
+    if [ ! -L "/sfmtoolwork/prg/dok" ]; then ln -s /sfmtool/prg/dok /sfmtoolwork/prg/dok; fi
+    echo -n "."
+    if [ ! -L "/sfmtoolwork/prg/lul" ]; then ln -s /sfmtool/prg/lul /sfmtoolwork/prg/lul; fi
+    echo -n "."
+    if [ ! -L "/sfmtoolwork/prg/ins/mandant.dat" ]; then ln -s /sfmtool/prg/ins/mandant.dat /sfmtoolwork/prg/ins/mandant.dat; fi
+    echo -n "."
+    if [ -f "/sfmtool/prg/ins/bsseslcr.dll" ]; then ln -sf /sfmtool/prg/ins/bsseslcr.dll /sfmtoolwork/prg/ins/bsseslcr.dll
+    elif [ -f "/sfmtool/prg/ins/BSSESLCR.DLL" ]; then ln -sf /sfmtool/prg/ins/BSSESLCR.DLL /sfmtoolwork/prg/ins/BSSESLCR.DLL; fi
+    echo " done"
+
+#    # Is this necessary?
+#    mandanten=`ls -1 /sfmtool/prg | grep -oe '^[A-Z]\{1\}.*'`
+#    for mand in $mandanten; do
+#      mkdir -p /sfmtoolwork/prg/$mand
+#      [ ! -L /sfmtoolwork/prg/$mand/grafik ] && ln -s /sfmtool/prg/$mand/grafik /sfmtoolwork/prg/$mand/grafik
+#      [ ! -L /sfmtoolwork/prg/$mand/doku ] && ln -s /sfmtool/prg/$mand/doku /sfmtoolwork/prg/$mand/doku
+#    done
+
+    echo -n "set permissions folders ..."
+    if [ -f "/sfmtool/prg/srv/setrights.pl" ] ; then su admin -c "perl /sfmtool/prg/srv/setrights.pl >/dev/null" >/dev/null; fi
+    echo " done"
+
+
+    echo -n "make fifos ."
+    if [ -p "/sfmtool/prg/run/server.fifo" ] ; then rm -f /sfmtool/prg/run/server.fifo; fi
+    echo -n "."
+    if [ -p "/sfmtool/prg/srv/fds/run/command.fifo" ] ; then rm -f /sfmtool/prg/srv/fds/run/command.fifo; fi
+    echo -n "."
+    if [ ! -p "/sfmtool/prg/run/server.fifo" ] ; then su admin -c "mkfifo /sfmtool/prg/run/server.fifo" >/dev/null; fi
+    echo -n "."
+    if [ ! -p "/sfmtool/prg/fds/run/command.fifo" ] ; then su admin -c "mkfifo /sfmtool/prg/fds/run/command.fifo" >/dev/null; fi
+    echo " done"
+
+    # srv/update has to be called in /sfmtool/prg (cause of ./ini/version.txt)
+    echo -n "srv/update ..."
+    if [ -f "/sfmtool/prg/srv/update" ] ; then su admin -c "cd /sfmtool/prg && srv/update >/dev/null" >/dev/null; fi
+    echo " done"
+
+    echo "ruby: install gems"
+    if [ -f "/utils/install_gems_sfmtool.sh" ] ; then su admin -c "bash /utils/install_gems_sfmtool.sh"; fi
+
+    # IP-Adresse nach tcpip.ini
+    if [ -f "/utils/ask_for_ipaddr.sh" ] && ! grep -q sfmtserver /etc/hosts ; then
+      bash /utils/ask_for_ipaddr.sh
+    fi
+
+
+    POSTGRESQL_DATA_DIRECTORY="/opt/postgresql"
+    if [ ! -d "$POSTGRESQL_DATA_DIRECTORY/9.1" ] ; then
+      echo -n "postgresql: create data directory $POSTGRESQL_DATA_DIRECTORY/9.1 ..."
+      mkdir -p $POSTGRESQL_DATA_DIRECTORY/9.1
+      echo " done"
+    fi
+    if [ -n "$(ls -A $POSTGRESQL_DATA_DIRECTORY/9.1)" ] ; then
+      echo -n "postgresql: remove old files from $POSTGRESQL_DATA_DIRECTORY/9.1 ..."
+      rm -R $POSTGRESQL_DATA_DIRECTORY/9.1/*
+      echo " done"
+    fi
+
+    echo -n "postgresql: set rights and initdb ."
+    chmod -R 700 $POSTGRESQL_DATA_DIRECTORY
+    echo -n "."
+    chown -R postgres:postgres $POSTGRESQL_DATA_DIRECTORY
+    echo -n "."
+    su postgres -c "/usr/lib/postgresql/9.1/bin/initdb --auth=peer --pgdata=$POSTGRESQL_DATA_DIRECTORY/9.1 >/dev/null"
+    echo " done"
+
+    if [ -f /run/postgresql/9.1-main.pid ]; then
+      echo -n "kill postgresql ."
+      pkill -f postgresql
+      echo " done"
+    fi
+
+    echo -n "postgresql: change configuration ..."
+    POSTGRESQL_CONF="/etc/postgresql/9.1/main/postgresql.conf"
+    sed -i "/data_directory =/ c\data_directory = '$POSTGRESQL_DATA_DIRECTORY/9.1'" $POSTGRESQL_CONF
+    echo -n "."
+    sed -i "/listen_addresses =/ c\listen_addresses = '*'" $POSTGRESQL_CONF
+    echo -n "."
+    sed -i "/ssl =/ c\ssl = false" $POSTGRESQL_CONF
+    echo -n "."
+    su postgres -c "/usr/lib/postgresql/9.1/bin/pg_resetxlog -f /opt/postgresql/9.1"
+    echo " done"
+#    POSTGRESQL_CONF="/etc/postgresql/9.1/main/postgresql.conf"
+#    su postgres -c "/usr/lib/postgresql/9.1/bin/postgres --config-file=$POSTGRESQL_CONF -c ssl=false -c listen_addresses='*' -c data_directory=$POSTGRESQL_DATA_DIRECTORY/9.1" >/dev/null
+
+    echo "start postgresql"
+    service postgresql start
+
+    POSTGRESQL_USER="admin"
+    echo -n "postgresql: create user '$POSTGRESQL_USER' ..."
+    su postgres -c "psql postgres -tAc \"SELECT 1 FROM pg_roles WHERE rolname='$POSTGRESQL_USER'\" | grep -q 1 || createuser --superuser --createrole --createdb $POSTGRESQL_USER && echo \" done\""
+
+    echo "postgresql: insert $POSTGRESQL_USER to pg_hba.conf"
+    if ! grep -q "local.*all.*$POSTGRESQL_USER.*ident" /etc/postgresql/9.1/main/pg_hba.conf ; then
+      echo -n " PG_HBA doesn't exist yet! Creating ..."
+        sed -i "/local[ \t]all[ \t]all[ \t]\(peer\|trust\)/ilocal   all             $POSTGRESQL_USER                                   ident" /etc/postgresql/9.1/main/pg_hba.conf >/dev/null
+      echo " done"
+    else
+      echo " PG_HBA already exists! Skip"
+    fi
+
+    echo "reloading postgresql"
+    service postgresql reload
+
+    echo -n "postgresql: set client encoding for '$POSTGRESQL_USER' to LATIN1 ..."
+    su postgres -c "psql --quiet --command=\"ALTER ROLE $POSTGRESQL_USER SET client_encoding = 'LATIN1';\" -U postgres"
+    echo " done"
+
+    echo "reload postgresql"
+    service postgresql reload
+
+    # Message of the day absschalten
+    if [ ! -f "/etc/motd.static" ]; then
+      touch /etc/motd.static && ln -sf /etc/motd.static /etc/motd
+    fi
+
+    # Install libnodave
+    if [ -d "$DIR_LIBNODAVE" ] && [ ! -f "/usr/local/lib/perl/$PERL_VERSION/Nodave.pm" ]; then
+      echo -n "installing libnodave ..."
+      cd $DIR_LIBNODAVE
+
+      cp ./libnodave.so /usr/lib/
+      cp ./nodave.h /usr/local/include
+
+      cd ./PERL/
+      perl Makefile.PL >/dev/null
+      make  >/dev/null
+      make test >/dev/null
+      make install >/dev/null
+      echo " done"
+    fi
+
+    # Install pg_simple (fuer IH-Auswertungen)
+    if [ -d "$DIR_PGSIMPLE" ] && [ ! -f "Installing /usr/local/share/perl/$PERL_VERSION/Pg/Simple.pm" ]; then
+      echo -n "installing pg_simple ..."
+      cd $DIR_PGSIMPLE
+      perl Makefile.PL >/dev/null
+      make  >/dev/null
+      make test >/dev/null
+      make install >/dev/null
+      echo " done"
+    fi
+
+    # Install debian-packages
+    if [ -f "/opt/*.deb" ]; then
+      for deb in /opt/*.deb; do
+        echo -n "Installing $deb .";
+        dpkg -i $deb >/dev/null
+        echo -n "."
+        rm $deb
+        echo " done"
+      done
+    fi
+
+    echo -n "restarting cron ."
+    /etc/init.d/cron restart >/dev/null
+    echo " done"
+
+    if [ -f /sfmtool/prg/srv/sfmtool.init ] && [ ! -f /etc/init.d/sfmtool ]; then
+      echo -n "setting up runlevel scripts ."
+      cp /sfmtool/prg/srv/sfmtool.init /etc/init.d/sfmtool
+      echo -n "."
+      cd /etc/init.d/
+      echo -n "."
+      insserv sfmtool
+      echo " done"
+    fi
+
+    if [ ! -f "/sfmtool/prg/ins/kreislauf.sh" ] && [ -f "/sfmtool/prg/ini/ins/kreislauf.sh" ]; then
+      echo -n "kopiere kreislauf nach ins/ ."
+      cp /sfmtool/prg/ini/ins/kreislauf.sh /sfmtool/prg/ins/
+      echo " done"
+    fi
+
+    echo -n "set rights ."
+    chown -R admin:users /opt/sfmtool
+    echo -n "."
+    chown -R admin:users /sfmtool
+    echo -n "."
+    chown -R admin:users /sfmtoolwork
+    echo " done"
+
+
+    if [ -f "/sfmtool/prg/srv/sfmtool"  ] ; then
+      if [ -f "/sfmtool/prg/run/server.pid" ] ; then
+        su admin -c "/sfmtool/prg/srv/sfmtool stop"
+        while [ -f $PRG_DIR/run/server.pid ]; do
+      	  sleep 5
+      	done
+      fi
+      su admin -c "/sfmtool/prg/srv/sfmtool start"
+    else
+      echo -e '\e[33mCan not start SWISSFM Tool. File /sfmtool/prg/srv/sfmtool does not exist! \e[0m'
+    fi
+
+    echo -e '\e[32mINSTALLATION OF SFMTOOL COMPLETE! \e[0m'
+  ;;
+
+
+  abort-remove)
+    # TODO
+  ;;
+
+
+  abort-upgrade)
+    # TODO
+  ;;
+
+
+  *)
+    echo -e '\e[33mpostinst called with unknown argument $1 \e[0m'
+    exit 1
+  ;;
+esac
+
+exit 0

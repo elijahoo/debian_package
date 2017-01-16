@@ -1,0 +1,23 @@
+#!/bin/sh -e
+
+POSTGRESQL_USER="sfmonline"
+POSTGRESQL_LINE_PG_HBA="local all $POSTGRESQL_USER password"
+POSTGRESQL_PG_HBA_FILE=`su -c "psql -t -P format=unaligned -c 'show hba_file';" postgres`
+
+if [ "$1" = remove ]; then
+  echo "PostgreSQL: drop user '$POSTGRESQL_USER' ..."
+  su -c "dropuser $POSTGRESQL_USER" postgres
+
+  echo "PostgreSQL: remove user '$POSTGRESQL_USER' from '$POSTGRESQL_PG_HBA_FILE' and creating '$POSTGRESQL_PG_HBA_FILE.bak'"
+  sed -i.bak "/local\sall\s$POSTGRESQL_USER\spassword/d" $POSTGRESQL_PG_HBA_FILE
+
+  service postgresql reload
+
+  if [ -f /utils/install_gems_sfmonline.sh ];    then rm -f /utils/install_gems_sfmonline.sh ;    fi
+fi
+
+#echo "Passenger: remove keys"
+#apt-key del 561F9B9CAC40B2F7
+#apt-get -qq install -y --force-yes apt-transport-https ca-certificates
+
+exit 0

@@ -1,0 +1,75 @@
+#!/bin/bash
+
+set -e
+
+case "$1" in
+  configure)
+
+    POSTGRESQL_NAME="redmine"
+    REDMINE_ORIG=`find /opt/ -name "$POSTGRESQL_NAME-*" | awk '{printf $1}'`
+    REDMINE_LN=/var/www/$POSTGRESQL_NAME
+    THEMES=$REDMINE_LN/public/themes
+    DATABASE_YML=/var/www/database.yml
+
+    ls -l /opt/
+    if [ ! -d $REDMINE_ORIG ]; then 
+      echo -e '\e[33mInstallation not possible -> Redmine is missing under /opt/. Re-Make deb-file! \e[0m'
+      exit 1
+    fi
+
+    if [ ! -L $REDMINE_LN ];                                             then  ln -s $REDMINE_ORIG/ $REDMINE_LN;        fi
+    if [ -f $DATABASE_YML ] && [ ! -f $REDMINE_LN/config/database.yml ]; then  mv    $DATABASE_YML $REDMINE_LN/config/; fi
+    if [ -f $DATABASE_YML ];                                             then  rm    $DATABASE_YML;                     fi
+
+    chown -R admin:users $REDMINE_LN
+    #chmod 755 /var/www
+
+    cd $REDMINE_LN
+    su admin -c "gem install bundler"
+    su admin -c "PATH=$PATH:/home/admin/.gem/ruby/1.8/bin && bundle install --without development test rmagick --path /home/admin/.gem/ruby/1.8/bin"
+    su admin -c "PATH=$PATH:/home/admin/.gem/ruby/1.8/bin && bundle exec rake generate_secret_token"
+
+    echo -n "postgresql: create role '$POSTGRESQL_NAME' ..."
+    su postgres -c "psql postgres -tAc \"SELECT 1 FROM pg_roles WHERE rolname='$POSTGRESQL_NAME';\" | grep 1 || psql postgres -tAc \"CREATE ROLE $POSTGRESQL_NAME LOGIN ENCRYPTED PASSWORD 'kundenportal2016' NOINHERIT VALID UNTIL 'infinity';\""
+    echo " done"
+    echo -n "postgresql: create database '$POSTGRESQL_NAME' ..."
+    su postgres -c "psql postgres -tAc \"SELECT 1 FROM pg_database WHERE datname='$POSTGRESQL_NAME';\" | grep 1 || psql postgres -tAc \"CREATE DATABASE $POSTGRESQL_NAME WITH ENCODING='UTF8' OWNER=$POSTGRESQL_NAME;\""
+    echo " done"
+
+    su admin -c "PATH=$PATH:/home/admin/.gem/ruby/1.8/bin && bundle exec rake db:migrate RAILS_ENV=production"
+    su admin -c "PATH=$PATH:/home/admin/.gem/ruby/1.8/bin && bundle exec rake $POSTGRESQL_NAME:load_default_data RAILS_ENV=production REDMINE_LANG=de"
+
+    mkdir -p $REDMINE_LN/tmp $REDMINE_LN/tmp/pdf $REDMINE_LN/public/plugin_assets
+    chmod -R 755 files $REDMINE_LN/log $REDMINE_LN/tmp $REDMINE_LN/public/plugin_assets
+
+    a2enmod passenger
+    a2ensite $POSTGRESQL_NAME
+    service apache2 restart
+
+#    # Theme download ( swissfm.ch not reachable )
+#    if [ ! -d $THEMES/circle ]; then
+#      cd $THEMES
+#      wget http://swissfm.ch/files/circle_theme-1_0_2.zip
+#      unzip circle_theme-1_0_2.zip
+#      rm -f circle_theme-1_0_2.zip
+#    fi
+  ;;
+
+
+  abort-remove)
+    # TODO
+  ;;
+
+
+  abort-upgrade)
+    # TODO
+  ;;
+
+
+  *)
+    echo -e '\e[33mpostinst called with unknown argument $1 \e[0m'
+    exit 1
+  ;;
+esac
+
+exit 0

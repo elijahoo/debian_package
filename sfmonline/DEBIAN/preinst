@@ -1,0 +1,6 @@
+#!/bin/sh -e
+
+echo "Passenger: add passenger repository"
+apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 561F9B9CAC40B2F7
+
+exit 0

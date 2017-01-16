@@ -1,0 +1,43 @@
+#!/bin/bash
+
+set -e
+
+POSTGRESQL_NAME="redmine"
+REDMINE_LN=/var/www/$POSTGRESQL_NAME
+
+case "$1" in
+  ### REMOVE / PURGE ###
+  remove)
+
+    read -p $'\e[1;33mRedmine will be deleted ( without config-files )\nAre you sure, you want to deinstall Redmine? [N/y] \e[0m'
+
+    if [[ $REPLY =~ ^[Yy]$ ]] ; then
+
+      # redmine
+      if [ -L $REDMINE_LN ]; then  unlink $REDMINE_LN;  fi
+      # TODO
+
+    else
+      exit 1
+    fi
+
+  ;;
+
+
+  upgrade)
+    # TODO
+  ;;
+
+
+  failed-upgrade)
+    # TODO
+  ;;
+
+
+  *)
+    echo -e '\e[33mprerm called with unknown argument $1 \e[0m'
+    exit 1
+  ;;
+esac
+
+exit 0

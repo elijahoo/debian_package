@@ -1,0 +1,9 @@
+Package: sfmtool
+Architecture: i386
+Section: non-free
+Priority: optional
+Depends: dialog, apt-transport-https, ca-certificates, apt-utils, sudo, automake, ssh, libpq-dev, postgresql-9.1, postgresql-server-dev-9.1, samba, libtimedate-perl, incron, ntp, ntpdate, zip, build-essential, git-core, uuid-runtime, xpdf, unoconv, ruby1.8, ruby1.8-dev, rubygems, perl, libsoap-lite-perl, libpg-perl, libdbi-perl, libdbd-pg-perl, librrds-perl, libxml-twig-perl, psmisc, xlhtml, gdb, libdbd-pg-ruby1.8, unixodbc-dev, screen, monit, imagemagick, libxslt-dev, libxml2-dev
+Suggests: collectd, postfix, mc, wv, dstat, htop, iotop, multitail, iftop, iptraf, vifm, curl, wget
+Maintainer: SWISSFM <support@swissfm.ch>
+Homepage: http://swissfmtool.com
+Description: SWISSFM Tool

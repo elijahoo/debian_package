@@ -1,0 +1,64 @@
+#!/bin/bash
+
+set -e
+
+PRG_DIR=/sfmtool/prg
+
+
+case "$1" in
+  ### REMOVE / PURGE ###
+  remove)
+
+    read -p $'\e[1;33mThe SWISSFM Tool will be deleted ( without config-files & Mandanten )\nAre you sure, you want to deinstall SWISSFM Tool? [N/y] \e[0m'
+
+    if [[ $REPLY =~ ^[Yy]$ ]] ; then
+
+      # FDS
+      if [ -f $PRG_DIR/fds/run/fdserver.pid ]; then
+        echo -n "Stopping SWISSFM FDS ..."
+        su admin -c "$PRG_DIR/fds/bin/fds stop" >/dev/null
+        echo " done"
+      fi
+
+      # TOOL
+      if [ -f $PRG_DIR/run/server.pid ]; then
+        echo -n "Stopping SWISSFM Tool ..."
+        su admin -c "$PRG_DIR/srv/sfmtool stop" >/dev/null
+        echo " done"
+      fi
+
+      # stop all processes from user admin
+      if getent passwd admin > /dev/null; then
+        echo -n "kill all processes from user admin ."
+        pkill -u admin
+        echo " done"
+      fi
+
+      # needed for the end of purge
+      USER_REM=/utils/ask_for_users_to_remove.sh
+      if [ -f $USER_REM ]; then cp $USER_REM /root/; fi
+
+    else
+      exit 1
+    fi
+
+  ;;
+
+
+  upgrade)
+    # TODO
+  ;;
+
+
+  failed-upgrade)
+    # TODO
+  ;;
+
+
+  *)
+    echo -e '\e[33mprerm called with unknown argument $1 \e[0m'
+    exit 1
+  ;;
+esac
+
+exit 0

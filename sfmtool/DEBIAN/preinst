@@ -1,0 +1,28 @@
+#!/bin/bash
+
+set -e
+
+case "$1" in
+  install)
+
+    # set real time to NOW
+    service ntp stop
+    ntpdate -s time.nist.gov
+    service ntp start
+
+    if [ ! -d /utils ]; then mkdir /utils ; fi
+  ;;
+
+
+  upgrade|abort-upgrade)
+    # TODO
+  ;;
+
+
+  *)
+    echo -e '\e[33mpreinst called with unknown argument $1 \e[0m'
+    exit 1
+  ;;
+esac
+
+exit 0

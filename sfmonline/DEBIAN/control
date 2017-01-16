@@ -1,0 +1,8 @@
+Package: sfmonline
+Architecture: i386
+Section: non-free
+Priority: optional
+Depends: ruby1.8, ruby1.8-dev, git-core, apache2, apache2-prefork-dev, libapr1-dev, libaprutil1-dev, libcurl4-openssl-dev, libapache2-mod-passenger, apt-transport-https, ca-certificates, postgresql-9.1, postgresql-server-dev-9.1, imagemagick, libxslt-dev, libxml2-dev, unixodbc, unixodbc-dev, gnuplot, libpango1.0-0, libcairo2, sfmtool
+Maintainer: SWISSFM <support@swissfm.ch>
+Homepage: http://swissfmtool.com
+Description: REST and Web backend of SWISSFM Tool

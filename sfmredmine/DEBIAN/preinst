@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -e
+
+case "$1" in
+  install)
+
+  ;;
+
+
+  upgrade|abort-upgrade)
+    # TODO
+  ;;
+
+
+  *)
+    echo -e '\e[33mpreinst called with unknown argument $1 \e[0m'
+    exit 1
+  ;;
+esac
+
+exit 0

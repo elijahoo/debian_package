@@ -1,0 +1,24 @@
+<VirtualHost *:80>
+  # ServerName www.yourhost.com
+  ServerAdmin support@swissfm.ch
+  DocumentRoot /sfmtool/sfmonline/public
+
+  <Directory /sfmtool/sfmonline/public>
+    # This relaxes Apache security settings.
+    AllowOverride all
+    # MultiViews must be turned off.
+    Options -MultiViews
+    # Uncomment this if youre on Apache >= 2.4
+    #Require all granted
+  </Directory>
+
+  ErrorLog /sfmtool/sfmonline/log/apache2_error.log
+  CustomLog /sfmtool/sfmonline/log/apache2_access.log common
+  #ForensicLog /sfmtool/sfmonline/log/apache2_forensic.log
+
+  # run app as admin user
+  PassengerUserSwitching on
+
+  #RailsEnv development
+  RailsEnv production
+</VirtualHost>
